@@ -1,0 +1,13 @@
+{:sources ["google profile" "facebook" "googleprofile" "twitter" "googleplus"]
+ :photos {"facebook" [{:url "https://d2ojpxxtu63wzl.cloudfront.net/static/t"}]
+          "twitter" [{:url "https://d2ojpxxtu63wzl.cloudfront.net/static/t"}
+                     {:url "https://d2ojpxxtu63wzl.cloudfront.net/static/t"}]
+          "google profile" [{:url "https://d2ojpxxtu63wzl.cloudfront.net/static/t"}]}
+ :socialProfiles {"facebook" [{:url "http://www.facebook.com/first.last"
+                               :username "first.last"}]
+                  "twitter" [{:url "http://twitter.com/first"
+                             :username "first"}]
+                  "googleplus" [{:url "https://plus.google.com/100"
+                                 :username "firstlast"}]
+                  "googleprofile" [{:url "http://profiles.google.com/firstlast"
+                                    :username "firstlast"}]}}
