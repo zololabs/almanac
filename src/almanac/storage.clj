@@ -1,15 +1,13 @@
 (ns almanac.storage
-  (:require [korma.db :as db :refer [defdb mysql]]
+  (:require [korma.db :refer [defdb mysql transaction rollback]]
             [clojure.string :as string]
-            [clojure.set :refer [union]]
-            [korma.core :as kcore :refer [defentity pk database
-                                          entity-fields belongs-to
-                                          select insert update
-                                          values has-many where
-                                          fields delete set-fields]]
+            [clojure.set :as set]
             [environ.core :refer [env]]
             [almanac.utils :as utils]
-            [zolo.utils.clojure :as zutils]))
+            [zolo.utils.clojure :as zutils]
+            [clojure.tools.logging :as log]
+            [slingshot.slingshot :refer [try+ throw+]])
+  (:use [korma.core]))
 
 (defdb rds-db (mysql {:user (:rds-user env)
                       :password (:rds-pass env)
@@ -52,10 +50,6 @@
      (:GENERATED_KEY (insert ~entity
                              (values ~default)))))
 
-(defn- entity->map [keys]
-  (fn [entity]
-    (select-keys entity keys)))
-
 (defn get-info [email]
   (if-let [person-id (get-entity-id person {:email email})]
     (let [photos (utils/group-by-and-compacted :service
@@ -68,7 +62,7 @@
                                                  (select profile
                                                          (fields :service :url :username)
                                                          (where {:person_id person-id})))]
-      {:services (vec (union (set (keys profiles)) (set (keys photos))))
+      {:services (vec (set/union (set (keys profiles)) (set (keys photos))))
        :socialProfiles profiles
        :photos photos})
     nil))
@@ -98,6 +92,11 @@
                (where (assoc d# :person_id ~person-id))))))
 
 (defn store-info [email info]
-  (let [person-id (get-or-create person {:email email} {:email email})]
-    (sync-service-entity photo person-id [:service :url] [:service :url] (:photos info))
-    (sync-service-entity profile person-id [:service :url :username] [:service :username] (:socialProfiles info))))
+  (transaction
+   (try+
+    (let [person-id (get-or-create person {:email email} {:email email})]
+      (sync-service-entity photo person-id [:service :url] [:service :url] (:photos info))
+      (sync-service-entity profile person-id [:service :url :username] [:service :username] (:socialProfiles info)))
+    (catch Object e
+      (rollback)
+      (log/error (format "Failed to store person %s, reason: %s" email e))))))
