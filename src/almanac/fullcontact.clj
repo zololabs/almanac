@@ -17,7 +17,7 @@
    (let [json-body (http/get (lookup-by-email-url (:fullcontact-apikey env) email)
                              {:as :string
                               :connection-manager connection-pool})
-         response (json/parse-string (:body json-body))]
+         response (json/parse-string (:body json-body) true)]
      response)
    (catch Object e
      (log/error "Error retrieving person data by email %s, reason: %s" email e)
