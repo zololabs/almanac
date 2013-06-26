@@ -67,6 +67,9 @@
        :photos photos})
     nil))
 
+;; TODO: 2 more optimizations
+;; 1. On delete I can use macro to generate a huge (or ...) so it will run in 1 SQL request
+;; 2. On remaining items I actually should check and store only changed ones
 (defmacro sync-service-entity [entity person-id entity-fields id-fields new-data]
   `(let [service-data# (mapcat (fn [service-name#]
                                 (map #(assoc % :service service-name#)
@@ -80,16 +83,18 @@
          diff# (zutils/diff ex-data# service-data#
                             (fn [v#]
                               (apply str (map #(get v# %) ~id-fields))))]
-     (doseq [d# (:added diff#)]
-       (insert ~entity
-               (values (assoc d# :person_id ~person-id))))
+     (insert ~entity
+             (values (mapv #(assoc % :person_id ~person-id)
+                           (:added diff#))))
      (doseq [d# (:deleted diff#)]
        (delete ~entity
-               (where (assoc d# :person_id ~person-id))))
+               (where {:person_id ~person-id})
+               (where d#)))
      (doseq [d# (:remaining diff#)]
        (update ~entity
                (set-fields d#)
-               (where (assoc d# :person_id ~person-id))))))
+               (where {:person_id ~person-id})
+               (where d#)))))
 
 (defn store-info [email info]
   (transaction
