@@ -46,7 +46,3 @@
                              force-update))
           (storage/store-info email info)
           info)))))
-
-(defn get-batch-info [emails & {:keys [force-update networks] :as options}]
-  "Returns batched information"
-  (doall (map #(apply get-social-info % (flatten options)) emails)))

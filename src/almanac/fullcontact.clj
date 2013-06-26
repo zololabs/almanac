@@ -13,6 +13,7 @@
   (format "https://api.fullcontact.com/v2/person.json?apiKey=%s&email=%s" api-key email))
 
 (defn find-person [email]
+  "Returns a FullContact person information as a hash-map"
   (try+
    (let [json-body (http/get (lookup-by-email-url (:fullcontact-apikey env) email)
                              {:as :string
