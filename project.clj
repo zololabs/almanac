@@ -3,6 +3,7 @@
   :url "http://example.com/FIXME"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/java.jdbc "0.2.3"]
+                 [org.clojure/tools.logging "0.2.6"]
                  [compojure "1.1.5"]
                  [environ "0.4.0"]
                  [slingshot "0.10.3"]
@@ -11,7 +12,8 @@
                  [lobos "1.0.0-beta1"]
                  [korma "0.3.0-RC5"]
                  [mysql/mysql-connector-java "5.1.25"]
-                 [zololabs/zolo-utils "0.1.0-SNAPSHOT"]]
+                 [zololabs/zolo-utils "0.1.0-SNAPSHOT"]
+                 [ch.qos.logback/logback-classic "1.0.13"]]
   :plugins [[lein-ring "0.8.5"]]
   :ring {:handler almanac.handler/app}
   :profiles

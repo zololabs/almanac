@@ -6,7 +6,8 @@
             [almanac.core :as core]
             [almanac.utils :as utils]
             [slingshot.slingshot :refer [try+ throw+]]
-            [ring.util.response :as ring-response]))
+            [ring.util.response :as ring-response]
+            [clojure.tools.logging :as log]))
 
 (defmulti format-response type)
 
@@ -38,8 +39,8 @@
        (if-let [result (core/get-social-info email)]
          (response 200 result)
          (response 404))
-       (catch Exception e
-         (comment (log/error "Failed"))
+       (catch Object e
+         (log/error (format "Failed request: %s, reason: %s" email e))
          (response 500 {:error (format "exception info: %s" e)}))))))
 
 (defroutes app-routes

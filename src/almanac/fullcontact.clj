@@ -4,7 +4,8 @@
             [cheshire.core :as json]
             [environ.core :refer [env]]
             [clojure.java.io :as io]
-            [slingshot.slingshot :refer [try+ throw+]]))
+            [slingshot.slingshot :refer [try+ throw+]]
+            [clojure.tools.logging :as log]))
 
 (def connection-pool (conn-mgr/make-reusable-conn-manager {:threads (:fullcontact-conn-threads env 5)}))
 
@@ -19,5 +20,5 @@
          response (json/parse-string (:body json-body))]
      response)
    (catch Object e
-     (comment (log/error "Error retrieving person data %s" e))
+     (log/error "Error retrieving person data by email %s, reason: %s" email e)
      (throw+))))
