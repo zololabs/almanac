@@ -26,14 +26,18 @@ So there are 2 ways to specify them: either plain environment variables or using
 #### Environment variables
 
 `FULLCONTACT_APIKEY` - API key for FullContact
+
 `RDS_HOST` - SQL server host name
+
 `RDS_DB`- SQL server db name
+
 `RDS_USER` - SQL user
+
 `RDS_PASS` SQL password
 
 #### Leiningen profiles
 
-As `leiningen` allows to specify profiles in `~/.lein/profiles.clj` it is the simpliest way to setup it, for example like this:
+If lein-environ plugin is installed, you can setup everything in profile, for example in `~/.lein/profiles.clj`:
 
     {:dev {:env {:fullcontact-apikey "3f68888499999752f"
                  :rds-host "somewhere0b.us-west-2.rds.amazonaws.com"
@@ -47,8 +51,8 @@ It also allows to run tests on a separate (even local) database.
 
 ## Running
 
-Before running the server, all schema  migrations should be performed.
-There are 2 options
+Before running the server, all schema migrations should be performed.
+There are 2 options:
 
 ### From REPL
 
@@ -57,11 +61,17 @@ There are 2 options
 
 ### Using lein-lobos plugin
 
-    Add `[lein-lobos "1.0.0-beta1"]` to your lein plugins and perform:
+Add `[lein-lobos "1.0.0-beta1"]` to your lein plugins and perform:
 
     `lein lobos migrate`
 
-Once all migrations are complete the server can be started as usually like `lein ring server` or `lein with-profile ... ring server`
+Once all migrations are complete the server can be started as usually like
+
+`lein ring server`
+
+or
+
+`lein with-profile ... ring server`
 
 ## License
 
