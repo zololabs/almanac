@@ -35,20 +35,21 @@
   (entity-fields :service :url)
   (belongs-to person))
 
-(defmacro get-entity-id [entity where-clause]
-  `((:pk ~entity)
-    (first
-     (select ~entity
-             (fields (:pk ~entity))
-             (where ~where-clause)))))
+(defn get-entity-id [entity where-clause]
+  (let [pk (:pk entity)]
+    (-> (select entity
+                (fields pk)
+                (where where-clause))
+        (first)
+        (pk))))
 
 ;; TODO: generated key seems to be MySQL specific key
 ;;       have to check this and replace with a correct insertion
-(defmacro get-or-create [entity where-clause default]
-  `(if-let [existing-id# (get-entity-id ~entity ~where-clause)]
-     existing-id#
-     (:GENERATED_KEY (insert ~entity
-                             (values ~default)))))
+(defn get-or-create [entity where-clause default]
+  (if-let [existing-id (get-entity-id entity where-clause)]
+    existing-id
+    (:GENERATED_KEY (insert entity
+                            (values default)))))
 
 (defn get-info [email]
   (if-let [person-id (get-entity-id person {:email email})]
