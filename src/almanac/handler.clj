@@ -44,7 +44,7 @@
          (response 500 {:error (format "exception info: %s" e)}))))))
 
 (defroutes app-routes
-  (GET "/" [] process-email-request)
+  (GET "/api/person" [] process-email-request)
   (route/resources "/")
   (route/not-found "Not Found"))
 
