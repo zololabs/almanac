@@ -25,7 +25,17 @@
         (is (= body (json/generate-string {:error "exception info: java.lang.Exception: test"}))))))
 
   (testing "Valid response"
-    (with-redefs [core/get-social-info (fn [&args] {:a 1 :b 2})]
+    (with-redefs [core/get-social-info (fn [& args] {:a 1 :b 2})]
       (let [{:keys [body status]} (app (request :get "/api/person" {:email "t@t.com"}))]
         (is (= status 200))
-        (is (= body (json/generate-string {:a 1 :b 2})))))))
+        (is (= body (json/generate-string {:a 1 :b 2}))))))
+
+  (testing "Batch response"
+    (with-redefs [core/get-social-info (fn [email]
+                                         (cond (= "t@t.com" email) {:a 1 :b 2}
+                                               (= "e@e.com" email) (throw (Exception. "test"))
+                                               :else nil))]
+      (let [{:keys [body status]} (app (request :get "/api/person/batch" {:emails "t@t.com,a@a.com,e@e.com"}))]
+        (is (= status 200))
+        (is (= body (json/generate-string {"t@t.com" {:a 1 :b 2}
+                                           "e@e.com" {:error "exception info: java.lang.Exception: test"}})))))))
