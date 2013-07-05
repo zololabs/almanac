@@ -36,7 +36,7 @@
   (if-not (utils/valid-email? email)
     (throw+ {:error ::invalid-email})
     (try+
-     (if-let [result (core/get-social-info email)]
+     (if-let [result (core/get-social-info email nil)]
        result
        (throw+ {:error ::not-found}))
      (catch [:error ::not-found] _

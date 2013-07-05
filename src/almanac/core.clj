@@ -2,7 +2,7 @@
   (:require [clojure.set :as set]
             [slingshot.slingshot :refer [try+ throw+]]
             [almanac.fullcontact :as fullcontact]
-            [almanac.storage :as storage]
+            [almanac.cache :as cache :refer [KeyValueStore]]
             [almanac.utils :as utils]
             [clojure.tools.logging :as log])  )
 
@@ -28,20 +28,24 @@
       (fullcontact/find-person)
       (fullcontact->almanac)))
 
-(defn get-social-info [email & {:keys [force-update networks] :as options
+(defn- get-cached-if-needed [cache email force-update]
+  (and (not force-update)
+       (not (nil? cache))
+       (get-value cache email)))
+
+(defn get-social-info [email cache & {:keys [force-update networks] :as options
                                 :or {:force-update false
                                      :networks []}}]
   "Returns all available information by email or nil if no info available
    Skips cache if supplied with :force-update true
    :networks can limit response only to required social networks
    "
-  (let [cached-info (and (not force-update)
-                         (storage/get-info email))
-        info (delay (get-fullcontact-info email))]
+  (let [cached-info (get-cached-if-needed cache email force-update)
+        info        (delay (get-fullcontact-info email))]
     (cond
      (not (nil? cached-info)) (do (log/debug (format "Cache hit for %s" email))
                                   cached-info)
      (empty-response? @info) nil
      :else (do (log/debug (format "Store to cache %s (force-update %s)" email force-update))
-               (storage/store-info email @info)
+               (when-not (nil? cache) (set-value cache email @info))
                @info))))

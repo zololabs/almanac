@@ -4,6 +4,7 @@
             [clojure.set :as set]
             [environ.core :refer [env]]
             [almanac.utils :as utils]
+            [almanac.cache :as cache :refer [KeyValueStore]]
             [zolo.utils.clojure :as zutils]
             [clojure.tools.logging :as log]
             [slingshot.slingshot :refer [try+ throw+]])
@@ -125,3 +126,8 @@
     (catch Object e
       (rollback)
       (log/error (format "Failed to store person %s, reason: %s" email e))))))
+
+(defrecord SQLStore [config]
+    KeyValueStore
+    (get-value [_ key] (get-info key))
+    (set-value [_ key value] (store-info key value)))
