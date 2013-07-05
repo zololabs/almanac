@@ -19,6 +19,15 @@
      :photos filtered-photos
      :socialProfiles filtered-profiles}))
 
+(defn- empty-response? [info]
+  (and (= 0 (count (:photos info)))
+       (= 0 (count (:socialProfiles info)))))
+
+(defn- get-fullcontact-info [email]
+  (-> email
+      (fullcontact/find-person)
+      (fullcontact->almanac)))
+
 (defn get-social-info [email & {:keys [force-update networks] :as options
                                 :or {:force-update false
                                      :networks []}}]
@@ -26,23 +35,13 @@
    Skips cache if supplied with :force-update true
    :networks can limit response only to required social networks
    "
-  (if-let [cached-info (and (not force-update)
-                            (storage/get-info email))]
-    (do
-      (log/debug (format "Got a cached response for %s" email))
-      cached-info)
-    (let [info (-> email
-                   (fullcontact/find-person)
-                   (fullcontact->almanac))]
-      (log/debug (format "Recieved fullcontact data for %s (force-update %s)"
-                         email
-                         force-update))
-      (if (and (= 0 (count (:photos info)))
-               (= 0 (count (:socialProfiles info))))
-        nil
-        (do
-          (log/debug (format "Storing fullcontact data for %s (force-update %s)"
-                             email
-                             force-update))
-          (storage/store-info email info)
-          info)))))
+  (let [cached-info (and (not force-update)
+                         (storage/get-info email))
+        info (delay (get-fullcontact-info email))]
+    (cond
+     (not (nil? cached-info)) (do (log/debug (format "Cache hit for %s" email))
+                                  cached-info)
+     (empty-response? @info) nil
+     :else (do (log/debug (format "Store to cache %s (force-update %s)" email force-update))
+               (storage/store-info email @info)
+               @info))))
