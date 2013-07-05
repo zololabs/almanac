@@ -4,6 +4,7 @@
             [compojure.route :as route]
             [cheshire.core :as json]
             [almanac.core :as core]
+            [almanac.cache :as cache]
             [almanac.utils :as utils]
             [clojure.string :as str]
             [slingshot.slingshot :refer [try+ throw+]]
@@ -32,11 +33,11 @@
                           (ring-response/status status-code)
                           (ring-response/content-type (get-content-type data)))))
 
-(defn- wrapped-email-request [email]
+(defn- wrapped-email-request [system email]
   (if-not (utils/valid-email? email)
     (throw+ {:error ::invalid-email})
     (try+
-     (if-let [result (core/get-social-info email nil)]
+     (if-let [result (core/get-social-info email (:cache system))]
        result
        (throw+ {:error ::not-found}))
      (catch [:error ::not-found] _
@@ -44,44 +45,56 @@
      (catch Object _
        (throw+ {:error ::internal-error})))))
 
-(defn process-email-request [request]
-  (let [email (get-in request [:params :email])]
-    (try+
-     (response 200 (wrapped-email-request email))
-     (catch [:error ::invalid-email] _
-       (response 400 {:error "Invalid email address"}))
-     (catch [:error ::not-found] _
-       (response 404))
-     (catch [:error ::internal-error] _
-       (let [original-throwable (:cause &throw-context)]
-         (log/error (format "Failed request: %s, reason: %s" email original-throwable))
-         (response 500 {:error (format "exception info: %s" original-throwable )}))))))
+(defn process-email-request [system]
+  (fn [request]
+   (let [email (get-in request [:params :email])]
+     (try+
+      (response 200 (wrapped-email-request system email))
+      (catch [:error ::invalid-email] _
+        (response 400 {:error "Invalid email address"}))
+      (catch [:error ::not-found] _
+        (response 404))
+      (catch [:error ::internal-error] _
+        (let [original-throwable (:cause &throw-context)]
+          (log/error (format "Failed request: %s, reason: %s" email original-throwable))
+          (response 500 {:error (format "exception info: %s" original-throwable )})))))))
 
-(defn process-batch-request [request]
-  (let [emails (-> (get-in request [:params :emails])
-                   (str/split #","))
-        safe-get-info-fn (fn [email]
-                           (try+
-                            (wrapped-email-request email)
-                            (catch [:error ::invalid-email] _
-                              nil)
-                            (catch [:error ::not-found] _
-                              nil)
-                            (catch [:error ::internal-error] _
-                              (log/error (format "Failed to get info [batch] for %s: %s" email (:cause &throw-context)))
-                              {:error (format "exception info: %s" (:cause &throw-context))})))
-        data (utils/reduce-fast #(if-let [result (safe-get-info-fn %2)]
-                                   (assoc! % %2 result)
-                                   %)
-                                {}
-                                emails)]
-    (response 200 data)))
+(defn process-batch-request [system]
+  (fn [request]
+    (let [emails (-> (get-in request [:params :emails])
+                          (str/split #","))
+               safe-get-info-fn (fn [email]
+                                  (try+
+                                   (wrapped-email-request system email)
+                                   (catch [:error ::invalid-email] _
+                                     nil)
+                                   (catch [:error ::not-found] _
+                                     nil)
+                                   (catch [:error ::internal-error] _
+                                     (log/error (format "Failed to get info [batch] for %s: %s" email (:cause &throw-context)))
+                                     {:error (format "exception info: %s" (:cause &throw-context))})))
+               data (utils/reduce-fast #(if-let [result (safe-get-info-fn %2)]
+                                          (assoc! % %2 result)
+                                          %)
+                                       {}
+                                       emails)]
+           (response 200 data))))
 
-(defroutes app-routes
-  (GET "/api/person" [] process-email-request)
-  (GET "/api/person/batch" [] process-batch-request)
-  (route/resources "/")
-  (route/not-found "Not Found"))
+(defn app-routes [system]
+  (routes
+   (GET "/api/person" [] (process-email-request system))
+   (GET "/api/person/batch" [] (process-batch-request system))
+   (route/resources "/")
+   (route/not-found "Not Found")))
+
+(defn prod-system []
+  {:cache (cache/mem-store)})
 
 (def app
-  (handler/api app-routes))
+  (handler/api (app-routes (prod-system))))
+
+(defn dev-system []
+  {:cache (cache/mem-store)})
+
+(def dev-app
+  (handler/api (app-routes (dev-system))))

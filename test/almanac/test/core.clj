@@ -1,7 +1,7 @@
 (ns almanac.test.core
   (:use [clojure.test])
   (:require [almanac.core :as core]
-            [almanac.storage :as storage]
+            [almanac.cache :as cache]
             [almanac.fullcontact :as fullcontact]
             [clojure.java.io :as io]
             [cheshire.core :as json]
@@ -22,13 +22,9 @@
                     slurp
                     edn/read-string)
           test-email "t@t.com"
-          storage-mock (atom {})]
+          cache (cache/mem-store)]
       (with-redefs [fullcontact/find-person (fn [email]
-                                              (throw+ {:error "Fullcontact shouldn't be called at all!"}))
-                    storage/store-info (fn [email info]
-                                         (swap! storage-mock assoc email info))
-                    storage/get-info (fn [email]
-                                       (get @storage-mock email))]
-        (storage/store-info test-email info)
-        (is (= (core/get-social-info test-email)
+                                              (throw+ {:error "Fullcontact shouldn't be called at all!"}))]
+        (cache/set-value cache test-email info)
+        (is (= (core/get-social-info test-email cache)
                info))))))

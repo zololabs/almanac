@@ -31,7 +31,7 @@
         (is (= body (json/generate-string {:a 1 :b 2}))))))
 
   (testing "Batch response"
-    (with-redefs [core/get-social-info (fn [email]
+    (with-redefs [core/get-social-info (fn [email & args]
                                          (cond (= "t@t.com" email) {:a 1 :b 2}
                                                (= "e@e.com" email) (throw (Exception. "test"))
                                                :else nil))]
