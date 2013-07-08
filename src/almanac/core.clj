@@ -2,7 +2,7 @@
   (:require [clojure.set :as set]
             [slingshot.slingshot :refer [try+ throw+]]
             [almanac.fullcontact :as fullcontact]
-            [almanac.cache :as cache :refer [KeyValueStore]]
+            [almanac.cache :as cache :refer [get-value set-value]]
             [almanac.utils :as utils]
             [clojure.tools.logging :as log])  )
 
@@ -31,7 +31,7 @@
 (defn- get-cached-if-needed [cache email force-update]
   (and (not force-update)
        (not (nil? cache))
-       (get-value cache email)))
+       (cache/get-value cache email)))
 
 (defn get-social-info [email cache & {:keys [force-update networks] :as options
                                 :or {:force-update false

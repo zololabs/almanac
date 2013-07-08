@@ -20,4 +20,5 @@
   {:dev {:dependencies [[ring-mock "0.1.5"]
                         [org.clojure/tools.namespace "0.2.3"]]
          :source-paths ["dev"]
-         :resource-paths ["dev-resources"]}})
+         :resource-paths ["dev-resources"]
+         :ring {:handler almanac.handler/dev-app}}})

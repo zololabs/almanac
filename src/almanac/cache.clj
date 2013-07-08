@@ -13,4 +13,4 @@
       (get-value [_ key]
         (get @store key))
       (set-value [_ key value]
-        (swap! @store assoc key value)))))
+        (swap! store assoc key value)))))
