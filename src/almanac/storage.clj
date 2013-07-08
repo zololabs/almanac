@@ -131,3 +131,43 @@
     KeyValueStore
     (get-value [_ key] (get-info key))
     (set-value [_ key value] (store-info key value)))
+
+;;; Social storage hides DB implementation for storing all the activity data
+;;; The client should access user activity data by running queries
+;;; Data should be pushed into DB by a cron-like daemon which will
+;;; use corresponding service adapters
+
+;; STUB
+;; (defmethod update-activity :twitter [storage user-id network]
+;;   (add-items storage user-id :twitter (map twitter->ActivityItem (twitter/get-mentions (get-credentials storage :twitter user-id))))
+;;   (set-last-update storage user-id :twitter (Date.))
+
+;; (defn update-activities [storage email networks]
+;;  (let [profiles (:socialProfiles (get-profiles-by-email storage email))]
+;;    (mapcat #(update-activity % (:% profiles) storage) networks))
+
+;;; TODO: Fullcontact should be migrated to use this storage
+
+(defprotocol SocialStorage
+  (get-profiles-by-email [storage email]) ;; returns social profiles using email lookup
+  (get-profiles-by-network-id [storage user-id network]) ;; returns social profiles using existing profile user-id in network
+  ;;; TODO: may be credentials should be provided by a separate Thing
+  (get-credentials [storage network user-id]) ;; map with required credentials info (user/password or OAuth token and so on)
+  (set-credentials [storage network user-id new-credentials]) ;; see above
+  (add-items [storage user-id network items]) ;; adds all the activity items for a user from a specific network
+  (get-items [storage user-id network]) ;; gets all the activity items for a user from a specific network
+  (get-conversation-items [storage current-user-id companion-user-id network]]) ;; gets conversations between current-user-id and companion-user-id
+  (get-last-update [storage user-id network]) ;; might be interesting later for service adapters
+  (set-last-update [storage user-id network timestamp])) ;; migth be interesting later for service adapters
+
+;;; Activity item is a map
+;;; Possible keys are:
+;;;    :network-type - network type, :twitter, :facebook, :gplus and so on
+;;;    :user-id- user-id (specific for network) of user on behalf the data was pulled
+;;;    :companion-id - user-id (specific for network) of conversation companion
+;;;    :content - string
+;;;    :stamp - network specific stamp
+;;;    :message-type (optional) can be :message or :mention or any other value
+;;;    :link (optional) direct URL to the message
+;;;    :thread-id (optional) string can point to whole thread if it is possible
+;;;    other keys as required...
