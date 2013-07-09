@@ -127,11 +127,6 @@
       (rollback)
       (log/error (format "Failed to store person %s, reason: %s" email e))))))
 
-(defrecord SQLStore [config]
-    KeyValueStore
-    (get-value [_ key] (get-info key))
-    (set-value [_ key value] (store-info key value)))
-
 ;;; Social storage hides DB implementation for storing all the activity data
 ;;; The client should access user activity data by running queries
 ;;; Data should be pushed into DB by a cron-like daemon which will
