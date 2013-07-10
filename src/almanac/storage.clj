@@ -151,7 +151,7 @@
   (set-credentials [storage network user-id new-credentials]) ;; see above
   (add-items [storage user-id network items]) ;; adds all the activity items for a user from a specific network
   (get-items [storage user-id network]) ;; gets all the activity items for a user from a specific network
-  (get-conversation-items [storage current-user-id companion-user-id network]]) ;; gets conversations between current-user-id and companion-user-id
+  (get-conversation-items [storage current-user-id companion-user-id network]) ;; gets conversations between current-user-id and companion-user-id
   (get-last-update [storage user-id network]) ;; might be interesting later for service adapters
   (set-last-update [storage user-id network timestamp])) ;; migth be interesting later for service adapters
 
@@ -166,3 +166,28 @@
 ;;;    :link (optional) direct URL to the message
 ;;;    :thread-id (optional) string can point to whole thread if it is possible
 ;;;    other keys as required...
+
+
+(defn mem-storage
+  ([] (mem-storage {}))
+  ([initial-data]
+     (let [data (atom (merge {} initial-data))]
+       (reify SocialStorage
+         (get-profiles-by-email [_ email]
+           "Not implemented")
+         (get-profiles-by-network-id [_ user-id network]
+           "Not implemented")
+         (get-credentials [_ network user-id]
+           (get-in @data [:credentials network user-id]))
+         (set-credentials [_ network user-id new-credentials]
+           (swap! data update-in [:credentials network user-id] (constantly new-credentials)))
+         (add-items [_ user-id network items]
+           (swap! data update-in [:items network user-id] #(concat (or % []) items)))
+         (get-items [_ user-id network]
+           (get-in @data [:items network user-id]))
+         (get-conversation-items [storage current-user-id companion-user-id network]
+           (filter #(constantly %) (get-items storage current-user-id network)))
+         (get-last-update [_ user-id network]
+           (get-in @data [:updates network user-id]))
+         (set-last-update [_ user-id network timestamp]
+           (swap! data update-in [:updates network user-id] (constantly timestamp)))))))
