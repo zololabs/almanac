@@ -8,4 +8,4 @@
          :password (:rds-pass env)
          :subname (format "//%s:3306/%s" (:rds-host env) (:rds-db env))})
 
-(open-global db)
+;; (open-global db)
