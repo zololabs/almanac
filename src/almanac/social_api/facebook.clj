@@ -2,14 +2,19 @@
   (:require [clj-facebook-graph.auth :refer [with-facebook-auth]]
             [clj-facebook-graph.client :as client]))
 
-(defn get-mentions [credentials]
+;; TODO: find out what's wrong with built-in with-facebook-auth as it doesn't send
+;; access token to the FB server
+;; meanwhile a very dirty workaround with a token transferred through params
+(defn- api-call [credentials path]
   (with-facebook-auth credentials
-    (client/get [:me :tagged])))
+    (client/get path {:query-params {:access_token (:access-token credentials)}
+                      :extract :data})))
+
+(defn get-mentions [credentials]
+  (api-call credentials [:me :tagged]))
 
 (defn get-messages [credentials]
-  (with-facebook-auth credentials
-    (client/get [:me :inbox])))
+  (api-call credentials [:me :inbox]))
 
 (defn get-photo-mentions [credentials]
-  (with-facebook-auth credentials
-    (client/get [:me :photos])))
+  (api-call credentials [:me :photos]))
