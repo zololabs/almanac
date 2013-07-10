@@ -1,6 +1,7 @@
 (ns almanac.social-adapter.twitter
   (:require [almanac.storage :as ss]
-            [almanac.social-api.twitter :as twitter]))
+            [almanac.social-api.twitter :as twitter]
+            [almanac.social-adapter :refer [update-activity]]))
 
 (defn- twitter->ActivityItem [twitter-item]
   nil)
@@ -11,4 +12,4 @@
                    (twitter/get-mentions)
                    (map twitter->ActivityItem))]
     (ss/add-items storage user-id :twitter items)
-    (ss/set-last-update storage user-id :twitter (Date.))))
+    (ss/set-last-update storage user-id :twitter (java.util.Date.))))

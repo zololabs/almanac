@@ -7,4 +7,4 @@
 
 (defn update-activities [storage email networks]
  (let [profiles (:socialProfiles (get-profiles-by-email storage email))]
-   (mapcat #(update-activity % (:% profiles) storage) networks))
+   (mapcat #(update-activity % (:% profiles) storage) networks)))
