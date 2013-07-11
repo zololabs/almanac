@@ -15,16 +15,16 @@
                                            params)})))
 
 (defn get-mentions [credentials]
+  "Returns mentions of user in statuses"
   (:data (:body (api-call credentials [:me :tagged]))))
 
-(def fb-time-format (SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ssZ"))
+(def ^:private fb-time-format (SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ssZ"))
 
 (defn- convert-fb-timestamp [text]
   (.parse fb-time-format text))
 
 (defn- thread-update-time [{:keys [updated_time]}]
   (convert-fb-timestamp updated_time))
-
 
 ;; Facebook message is a map with:
 ;;    id = message id
@@ -61,7 +61,12 @@
      :id (:id comment)
      :to (cs/difference recipients (set (vector from)))}))
 
+;; TODO: start message might require user id, in case conversation was started
+;; by user, so it should be also passed here
 (defn get-thread-messages [credentials thread-id filters]
+  "Returns a sequence of private messages in thread-id
+  filters should be a map with possible :message-filter-fn for
+  filtering individual messages by Date"
   (let [thread (:body (api-call credentials [(format "%s" thread-id)]))
         recipients (set (map :id (:data (:to thread))))
         time-filter (or (:message-filter-fn filters)
@@ -74,7 +79,9 @@
     (cons start-msg comments)))
 
 (defn get-messages [credentials & {:keys [filters]}]
-  "Returns a sequence of private messages to/from user"
+  "Returns a sequence of private messages to/from user
+  filters should be a map with :thread-filter-fn for filtering threads
+  and :message-filter-fn for filtering individual messages by Date"
   (let [time-filter (or (:thread-filter-fn filters)
                         (constantly true))]
     (->> (api-call credentials [:me :inbox] :params {:fields "updated_time"})
@@ -85,4 +92,5 @@
          (reduce concat))))
 
 (defn get-photo-mentions [credentials]
+  "Returns photos where current user is tagged"
   (:data (:body (api-call credentials [:me :photos]))))
