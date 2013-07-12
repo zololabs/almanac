@@ -5,7 +5,14 @@
   (:import [java.util Date]))
 
 (defn- fb-message->ActivityItem [msg]
-  nil)
+  {:network-type :facebook
+   :recipients (:to msg)
+   :sender-id (:from msg)
+   :message-type :message
+   :link (format "https://graph.facebook.com/%s" (:id msg))
+   :thread-id (:thread-id msg)
+   :content (:message msg)
+   :created-time (:created-time msg)})
 
 (defn- fb-status->ActivityItem [status]
   nil)
@@ -35,4 +42,4 @@
                                  [fb/get-photo-mentions fb-photo->ActivityItem]]]
       (->> (get-fn creds)
            (map convert-fn)
-           (ss/add-items storage user-id :facebook)))))
+           (ss/add-items storage)))))

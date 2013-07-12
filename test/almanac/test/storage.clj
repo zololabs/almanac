@@ -60,25 +60,37 @@
 ;;   (testing "Merging profile"))
 
 
+(defn- create-activity-item [network user-id from]
+  {:from from
+   :recipients (set (vector user-id))
+   :network-type network})
+
 (defn basic-test-storage [st]
     (let [net :twitter
           user-id "tester"
+          comp-id "sender"
           test-creds {:access-token "token"}
-          test-items1 [{:a 1}]
-          test-items2 [{:b 2}]]
+          test-items1 [(create-activity-item net user-id comp-id)]
+          test-items2 [(create-activity-item net user-id "miss")]]
       (is (= nil (storage/get-credentials st net user-id)))
 
       (storage/set-credentials st net user-id test-creds)
       (is (= test-creds (storage/get-credentials st net user-id)))
 
-      (is (= 0 (count (storage/get-items st user-id net))))
-      (storage/add-items st user-id net test-items1)
+      (is (= 0 (count (storage/get-user-items st user-id net))))
+      (storage/add-items st test-items1)
       ;; simple test
-      (is (= 1 (count (storage/get-items st user-id net))))
-      (storage/add-items st user-id net test-items2)
+      (is (= 1 (count (storage/get-items st))))
+      (storage/add-items st test-items2)
       ;; concatenation should work
       (is (= (concat test-items1 test-items2)
-             (storage/get-items st user-id net)))))
+             (storage/get-items st)))
+      ;; filtering by conversation should work
+      (is (= test-items1
+             (storage/get-conversation-items st user-id comp-id net)))
+      ;; filtering by user should work
+      (is (= (concat test-items1 test-items2)
+             (storage/get-user-items st user-id net)))))
 
 (deftest social-storage
   (testing "Social mem storage implementations"

@@ -149,8 +149,9 @@
   ;;; TODO: may be credentials should be provided by a separate Thing
   (get-credentials [storage network user-id]) ;; map with required credentials info (user/password or OAuth token and so on)
   (set-credentials [storage network user-id new-credentials]) ;; see above
-  (add-items [storage user-id network items]) ;; adds all the activity items for a user from a specific network
-  (get-items [storage user-id network]) ;; gets all the activity items for a user from a specific network
+  (add-items [storage items]) ;; adds all the activity items for a user from a specific network
+  (get-items [storage]) ;; gets all the activity items for a user from a specific network
+  (get-user-items [storage user-id network])
   (get-conversation-items [storage current-user-id companion-user-id network]) ;; gets conversations between current-user-id and companion-user-id
   (get-last-update [storage user-id network]) ;; might be interesting later for service adapters
   (set-last-update [storage user-id network timestamp])) ;; migth be interesting later for service adapters
@@ -158,16 +159,18 @@
 ;;; Activity item is a map
 ;;; Possible keys are:
 ;;;    :network-type - network type, :twitter, :facebook, :gplus and so on
-;;;    :user-id- user-id (specific for network) of user on behalf the data was pulled
-;;;    :companion-id - user-id (specific for network) of conversation companion
+;;;    :sender-id - user-id of item author
+;;;    :recipients - set of user-ids of recipients/mentioned persons
 ;;;    :content - string
-;;;    :stamp - network specific stamp
+;;;    :created-time - network specific stamp
 ;;;    :message-type (optional) can be :message or :mention or any other value
 ;;;    :link (optional) direct URL to the message
 ;;;    :thread-id (optional) string can point to whole thread if it is possible
 ;;;    other keys as required...
 
-
+;;; Mem storage provides simpliest in-memory implementation
+;;; of SocialStorage just for development purposes
+;;; Allows creation with pre-populated data
 (defn mem-storage
   ([] (mem-storage {}))
   ([initial-data]
@@ -181,12 +184,21 @@
            (get-in @data [:credentials network user-id]))
          (set-credentials [_ network user-id new-credentials]
            (swap! data update-in [:credentials network user-id] (constantly new-credentials)))
-         (add-items [_ user-id network items]
-           (swap! data update-in [:items network user-id] #(concat (or % []) items)))
-         (get-items [_ user-id network]
-           (get-in @data [:items network user-id]))
+         (add-items [_ items]
+           (let [update-fn (fn [old-items]
+                             (concat old-items items))]
+               (swap! data update-in [:items] update-fn)))
+         (get-items [_]
+           (:items @data))
+         (get-user-items [_ user-id network]
+           (->> (:items @data)
+                (filter #(and (= network (:network-type %))
+                              ((:recipients %) user-id)))))
          (get-conversation-items [storage current-user-id companion-user-id network]
-           (filter #(constantly %) (get-items storage current-user-id network)))
+           (->> (:items @data)
+                (filter #(and (= network (:network-type %))
+                              (= (:from %) companion-user-id)
+                              ((:recipients %) current-user-id)))))
          (get-last-update [_ user-id network]
            (get-in @data [:updates network user-id]))
          (set-last-update [_ user-id network timestamp]

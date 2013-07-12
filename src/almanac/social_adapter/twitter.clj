@@ -11,5 +11,5 @@
                    (ss/get-credentials storage :twitter)
                    (twitter/get-mentions)
                    (map twitter->ActivityItem))]
-    (ss/add-items storage user-id :twitter items)
+    (ss/add-items storage items)
     (ss/set-last-update storage user-id :twitter (java.util.Date.))))
