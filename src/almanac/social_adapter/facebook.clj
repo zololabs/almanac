@@ -11,7 +11,8 @@
    :message-type :message
    :link (format "https://graph.facebook.com/%s" (:id msg))
    :thread-id (:thread-id msg)
-   :content (:message msg)
+   :id (:id msg)
+   :content (:text msg)
    :created-time (:created-time msg)})
 
 (defn- fb-status->ActivityItem [status]

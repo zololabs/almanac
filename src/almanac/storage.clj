@@ -166,6 +166,7 @@
 ;;;    :message-type (optional) can be :message or :mention or any other value
 ;;;    :link (optional) direct URL to the message
 ;;;    :thread-id (optional) string can point to whole thread if it is possible
+;;;    :id - unique id of message within its network
 ;;;    other keys as required...
 
 ;;; Mem storage provides simpliest in-memory implementation
