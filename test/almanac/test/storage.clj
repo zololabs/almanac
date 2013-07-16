@@ -1,5 +1,7 @@
 (ns almanac.test.storage
   (:require [almanac.storage :as storage]
+            [almanac.system :as system]
+            [almanac.cache :as kvstore]
             ;[lobos.core]
             ;[korma.core :refer [select aggregate]]
             )
@@ -65,17 +67,19 @@
    :recipients (set (vector user-id))
    :network-type network})
 
-(defn basic-test-storage [st]
-    (let [net :twitter
+(defn basic-test-storage [sys]
+    (let [{:keys [credentials-storage activity-storage]} sys
+          st activity-storage
+          net :twitter
           user-id "tester"
           comp-id "sender"
           test-creds {:access-token "token"}
           test-items1 [(create-activity-item net user-id comp-id)]
           test-items2 [(create-activity-item net user-id "miss")]]
-      (is (= nil (storage/get-credentials st net user-id)))
+      (is (= nil (kvstore/get-credentials credentials-storage net user-id)))
 
-      (storage/set-credentials st net user-id test-creds)
-      (is (= test-creds (storage/get-credentials st net user-id)))
+      (kvstore/set-credentials credentials-storage net user-id test-creds)
+      (is (= test-creds (kvstore/get-credentials credentials-storage net user-id)))
 
       (is (= 0 (count (storage/get-user-items st user-id net))))
       (storage/add-items st test-items1)
@@ -94,5 +98,5 @@
 
 (deftest social-storage
   (testing "Social mem storage implementations"
-    (let [mem (storage/mem-storage)]
-      (basic-test-storage mem))))
+    (let [test-system (system/dev-system)]
+      (basic-test-storage test-system))))

@@ -1,5 +1,6 @@
 (ns almanac.social-adapter.facebook
   (:require [almanac.storage :as ss]
+            [almanac.cache :as kvstore]
             [almanac.social-adapter :refer [update-activity]]
             [almanac.social-api.facebook :as fb])
   (:import [java.util Date]))
@@ -36,11 +37,12 @@
 (def ^:private recent-enough? (gen-date-diff-predicate (Date.) MSECS-IN-MONTH))
 ;; end of section to be moved
 
-(defmethod update-activity :facebook [network user-id storage]
-  (let [creds (ss/get-credentials storage :facebook user-id)]
+(defmethod update-activity :facebook [network user-id system]
+  (let [{:keys [activity-storage credentials-storage]} system
+        creds (kvstore/get-credentials credentials-storage :facebook user-id)]
     (doseq [[get-fn convert-fn] [[#(fb/get-messages % :filters {:thread-filter-fn recent-enough?}) fb-message->ActivityItem]
                                  [fb/get-mentions fb-status->ActivityItem]
                                  [fb/get-photo-mentions fb-photo->ActivityItem]]]
       (->> (get-fn creds)
            (map convert-fn)
-           (ss/add-items storage)))))
+           (ss/add-items activity-storage)))))

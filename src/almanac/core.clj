@@ -4,7 +4,19 @@
             [almanac.fullcontact :as fullcontact]
             [almanac.cache :as cache :refer [get-value set-value]]
             [almanac.utils :as utils]
-            [clojure.tools.logging :as log])  )
+            [clojure.tools.logging :as log]))
+
+;;; Photo info format - a map with:
+;;;    :url - URL of the profile image
+
+;;; User info format - a map with:
+;;;    :username - an unique id of user in social network
+;;;    :url - URL of user profile
+
+;;; Almanac item format - a map with
+;;;    :sources - a vector of all social networks presented in response
+;;;    :photos - a map where the key is social network and the value is a photo info
+;;;    :socialProfiles - a map where the key is social network and the value is user info
 
 (defn fullcontact->almanac [{:keys [photos socialProfiles]}]
   "Converts Fullcontact response to the Alamanac response"

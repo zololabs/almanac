@@ -6,6 +6,7 @@
             [almanac.core :as core]
             [almanac.cache :as cache]
             [almanac.utils :as utils]
+            [almanac.system :refer [dev-system prod-system]]
             [clojure.string :as str]
             [slingshot.slingshot :refer [try+ throw+]]
             [ring.util.response :as ring-response]
@@ -37,7 +38,7 @@
   (if-not (utils/valid-email? email)
     (throw+ {:error ::invalid-email})
     (try+
-     (if-let [result (core/get-social-info email (:cache system))]
+     (if-let [result (core/get-social-info email (:fullcontact-cache system))]
        result
        (throw+ {:error ::not-found}))
      (catch [:error ::not-found] _
@@ -87,14 +88,8 @@
    (route/resources "/")
    (route/not-found "Not Found")))
 
-(defn prod-system []
-  {:cache (cache/mem-store)})
-
 (def app
   (handler/api (app-routes (prod-system))))
-
-(defn dev-system []
-  {:cache (cache/mem-store)})
 
 (def dev-app
   (handler/api (app-routes (dev-system))))

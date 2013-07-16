@@ -1,5 +1,6 @@
 (ns almanac.social-adapter.twitter
   (:require [almanac.storage :as ss]
+            [almanac.cache :as kvstore]
             [almanac.social-api.twitter :as twitter]
             [almanac.social-adapter :refer [update-activity]])
   (:import (java.text SimpleDateFormat)
@@ -29,14 +30,18 @@
    :recipients (set (vector (:recipient_id_str message)))
    :created-time (twitter-date->date (:created_at message))})
 
-(defmethod update-activity :twitter [network user-id storage]
-  (let [creds (ss/get-credentials storage :twitter user-id)
+(defmethod update-activity :twitter [network user-id system]
+  (let [{:keys [credentials-storage activity-storage aux-cache]} system
+        creds (kvstore/get-credentials credentials-storage :twitter user-id)
         mentions (->> creds
                       (twitter/get-mentions)
                       (map mention->ActivityItem))
         messages (->> creds
                       (twitter/get-messages)
                       (map message->ActivityItem))]
-    (ss/add-items storage mentions)
-    (ss/add-items storage messages)
-    (ss/set-last-update storage user-id :twitter (java.util.Date.))))
+    (ss/add-items activity-storage mentions)
+    (ss/add-items activity-storage messages)
+    (when aux-cache
+      (kvstore/set-value aux-cache
+                         (format "%s-%s-last-upd" user-id (name :twitter))
+                         (java.util.Date.)))))
