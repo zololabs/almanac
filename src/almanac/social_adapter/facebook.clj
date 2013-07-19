@@ -1,7 +1,7 @@
 (ns almanac.social-adapter.facebook
   (:require [almanac.storage :as ss]
             [almanac.cache :as kvstore]
-            [almanac.social-adapter :refer [update-activity]]
+            [almanac.social-adapter :refer [update-activity SocialAdapter]]
             [almanac.social-api.facebook :as fb])
   (:import [java.util Date]))
 
@@ -46,3 +46,19 @@
       (->> (get-fn creds)
            (map convert-fn)
            (ss/add-items activity-storage)))))
+
+(defn- update-user-activity [api-id app-secret user-id system]
+  (let [{:keys [activity-storage credentials-storage]} system
+        creds (kvstore/get-credentials credentials-storage :facebook user-id)]
+    (->> (fb/get-user-activity creds user-id)
+         (map fb-status->ActivityItem)
+         (ss/add-items activity-storage))))
+
+(defn adapter [app-id app-secret]
+  (reify SocialAdapter
+    (update-user-activity [_ user-id system]
+      (update-user-activity app-id app-secret user-id system))
+    (update-user-conversations [_ user-id system]
+      (update-activity :facebook user-id system)) ;; for now just to call existing function
+    (get-conversation [_ user-id1 user-id2 system])
+    (reply-to-thread [_ user-id thread-id message system])))
