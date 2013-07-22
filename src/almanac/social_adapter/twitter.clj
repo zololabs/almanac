@@ -31,7 +31,7 @@
    :recipients (set (vector (:recipient_id_str message)))
    :created-time (twitter-date->date (:created_at message))})
 
-(defn- tweet->ActivityItem [{:keys [id_str text created_at author_id_str]}]
+(defn- tweet->ActivityItem [{:keys [id_str text created_at author_id_str] :as tweet}]
   {:id id_str
    :content text
    :network-type :twitter
@@ -43,16 +43,13 @@
 (defn- oauth-creds-from [{:keys [app-consumer-key app-consumer-secret user-token token-secret]}]
   (oauth/make-oauth-creds app-consumer-key app-consumer-secret user-token token-secret))
 
-(defn get-mentions [creds]
+(defn- get-mentions [creds]
   (:body (api/statuses-mentions-timeline :params {:count 200} :oauth-creds (oauth-creds-from creds))))
 
-(defn get-messages [creds]
+(defn- get-messages [creds]
   (:body (api/direct-messages :params {:count 200} :oauth-creds (oauth-creds-from creds))))
 
-(defn- app-creds-from []
-  (oauth/make-app-creds consumer-key consumer-secret))
-
-(defn get-public-tweets [creds user-id]
+(defn- get-public-tweets [creds user-id]
   (:body (api/statuses-user-timeline :oauth-creds creds :params {:screen_name user-id :count 50})))
 
 
