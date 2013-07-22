@@ -60,5 +60,5 @@
       (update-user-activity app-id app-secret user-id system))
     (update-user-conversations [_ user-id system]
       (update-activity :facebook user-id system)) ;; for now just to call existing function
-    (get-conversation [_ user-id1 user-id2 system])
+    (get-conversation [_ user-id1 user-id2 thread-id system])
     (reply-to-thread [_ user-id thread-id message system])))
