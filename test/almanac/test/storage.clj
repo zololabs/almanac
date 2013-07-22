@@ -81,7 +81,7 @@
       (kvstore/set-credentials credentials-storage net user-id test-creds)
       (is (= test-creds (kvstore/get-credentials credentials-storage net user-id)))
 
-      (is (= 0 (count (storage/get-user-items st user-id net))))
+      (is (= 0 (count (storage/get-items-for-user st user-id net))))
       (storage/add-items st test-items1)
       ;; simple test
       (is (= 1 (count (storage/get-items st))))
@@ -94,7 +94,7 @@
              (storage/get-conversation-items st user-id comp-id net)))
       ;; filtering by user should work
       (is (= (concat test-items1 test-items2)
-             (storage/get-user-items st user-id net)))))
+             (storage/get-items-for-user st user-id net)))))
 
 (deftest social-storage
   (testing "Social mem storage implementations"

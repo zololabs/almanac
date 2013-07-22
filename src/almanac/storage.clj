@@ -21,7 +21,8 @@
   (set-credentials [storage network user-id new-credentials]) ;; see above
   (add-items [storage items]) ;; adds all the activity items for a user from a specific network
   (get-items [storage]) ;; gets all the activity items for a user from a specific network
-  (get-user-items [storage user-id network])
+  (get-items-for-user [storage user-id network])
+  (get-user-posts [storage user-id network])
   (get-conversation-items [storage current-user-id companion-user-id network]) ;; gets conversations between current-user-id and companion-user-id
 ;;  (get-last-update [storage user-id network]) ;; might be interesting later for service adapters
 ;;  (set-last-update [storage user-id network timestamp])
@@ -58,10 +59,15 @@
                (swap! data update-in [:items] update-fn)))
          (get-items [_]
            (:items @data))
-         (get-user-items [_ user-id network]
+         (get-items-for-user [_ user-id network]
            (->> (:items @data)
                 (filter #(and (= network (:network-type %))
                               ((:recipients %) user-id)))))
+         (get-user-posts [_ user-id network]
+           (->> (:items @data)
+                (filter #(and (= network (:network-type %))
+                              (= user-id (:sender-id %))
+                              (= :post (:message-type))))))
          (get-conversation-items [storage current-user-id companion-user-id network]
            (->> (:items @data)
                 (filter #(and (= network (:network-type %))
