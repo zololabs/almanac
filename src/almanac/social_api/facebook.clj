@@ -94,3 +94,6 @@
 (defn get-photo-mentions [credentials]
   "Returns photos where current user is tagged"
   (:data (:body (api-call credentials [:me :photos]))))
+
+(defn get-user-activity [credentials]
+  nil)
