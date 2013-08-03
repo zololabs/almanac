@@ -67,7 +67,7 @@
            (->> (:items @data)
                 (filter #(and (= network (:network-type %))
                               (= user-id (:sender-id %))
-                              (= :post (:message-type))))))
+                              (= :post (:message-type %))))))
          (get-conversation-items [storage current-user-id companion-user-id network]
            (->> (:items @data)
                 (filter #(and (= network (:network-type %))
