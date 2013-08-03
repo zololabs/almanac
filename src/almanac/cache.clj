@@ -13,7 +13,6 @@
       (set-value [_ key value]
         (swap! store assoc key value)))))
 
-
 (defn- credentials-key [user-id network]
   (format "%s@%s-cr" user-id (name network)))
 

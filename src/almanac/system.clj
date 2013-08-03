@@ -16,3 +16,7 @@
                    (cache/mem-store)
                    (ss/mem-storage)
                    (cache/mem-store)))
+
+(defprotocol Service
+  (start [this &{:as options}])
+  (stop [this]))
