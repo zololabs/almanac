@@ -18,5 +18,5 @@
                    (cache/mem-store)))
 
 (defprotocol Service
-  (start [this &{:as options}])
+  (start [this options])
   (stop [this]))

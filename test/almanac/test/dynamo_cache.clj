@@ -15,7 +15,7 @@
                      :photos
                      {"twitter" [{:url "pu"}]}}
           test-email "me@somewhere"]
-      (system/start dc :async false)
+      (system/start dc {:async false})
       (is (nil? (cache/get-value dc test-email)))
       (cache/set-value dc test-email test-info)
       (is (= (cache/get-value dc test-email)

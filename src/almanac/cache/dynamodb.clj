@@ -55,6 +55,6 @@
      (set-value [_ key value]
        (set-value aws-creds table-name key value))
      Service
-     (start [_ &{:keys [async]}]
-       (ensure-table-exists aws-creds table-name async))
+     (start [this options]
+       (ensure-table-exists aws-creds table-name (:async options)))
      (stop [_]))))
