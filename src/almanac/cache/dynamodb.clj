@@ -25,11 +25,11 @@
                           (assoc :id key))]
     (dynamo/put-item aws-creds table-name encoded-value)))
 
-(defn- table-exists? [aws-creds table-name]
-  (->> aws-creds
-       (dynamo/list-tables)
-       (filter #(= (:name %) table-name))
-       (seq?)))
+(defn- active-table? [aws-creds table-name]
+  (->> table-name
+       (dynamo/describe-table aws-creds)
+       (:status)
+       (= :active)))
 
 ;; TODO: throughput should be modifiable
 (defn- ensure-table-exists [aws-creds table-name async]
@@ -43,7 +43,7 @@
         (drop-while identity
                     (repeatedly #(do
                                    (Thread/sleep 1000)
-                                   (not (table-exists? aws-creds table-name))))))))
+                                   (not (active-table? aws-creds table-name))))))))
 
 (defn cache [access-key secret-key table-name]
   (let [aws-creds {:access-key access-key
