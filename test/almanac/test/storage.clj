@@ -2,6 +2,8 @@
   (:require [almanac.storage :as storage]
             [almanac.system :as system]
             [almanac.cache :as kvstore]
+            [almanac.social-storage.dynamodb :as social-dynamo]
+            [environ.core :refer [env]]
             ;[lobos.core]
             ;[korma.core :refer [select aggregate]]
             )
@@ -96,7 +98,17 @@
       (is (= (concat test-items1 test-items2)
              (storage/get-items-for-user st user-id net)))))
 
-(deftest social-storage
+(deftest mem-social-storage
   (testing "Social mem storage implementations"
     (let [test-system (system/dev-system)]
+      (basic-test-storage test-system))))
+
+(deftest dynamodb-social-storage
+  (testing "DynamoDB social storage implementation"
+    (let [dev-system (system/dev-system)
+          dyn-storage (social-dynamo/dynamo-storage (:aws-access-key env)
+                                                    (:aws-secret-key env)
+                                                    :table-name-prefix "test")
+          test-system (assoc dev-system :activity-storage dyn-storage)]
+      (start dyn-storage nil)
       (basic-test-storage test-system))))

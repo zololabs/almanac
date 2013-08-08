@@ -13,6 +13,7 @@
                  [korma "0.3.0-RC5"]
                  [rotary "0.4.0"]
                  [twitter-api "0.7.4"]
+                 [com.taoensso/faraday "0.10.2"]
                  [clj-facebook-graph "0.4.1-SNAPSHOT"]
                  [mysql/mysql-connector-java "5.1.25"]
                  [zololabs/zolo-utils "0.1.0-SNAPSHOT"]

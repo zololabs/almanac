@@ -1,53 +1,29 @@
 (ns almanac.cache.dynamodb
   (:require [almanac.cache :refer [KeyValueStore]])
   (:require [almanac.system :refer [Service]])
-  (:require [rotary.client :as dynamo])
+  (:require [taoensso.faraday :as dynamo])
   (:require [cheshire.core :as json]))
 
-(defn- encode [value]
-  {:version 1
-   :mime-type "application/json"
-   :data (json/generate-string value)})
-
-(defn- decode [{:strs [version mime-type data] :as value}]
-  (when (and (= version 1)
-             (= mime-type "application/json"))
-    (json/parse-string data true)))
-
 (defn- get-value [aws-creds table-name key]
-  (->> (assoc {} :id key)
-       (dynamo/get-item aws-creds table-name)
-       (decode)))
+  (->> (dynamo/get-item aws-creds table-name {:id key})
+       (:data)))
 
 (defn- set-value [aws-creds table-name key value]
-  (let [encoded-value (-> value
-                          (encode)
-                          (assoc :id key))]
-    (dynamo/put-item aws-creds table-name encoded-value)))
-
-(defn- active-table? [aws-creds table-name]
-  (->> table-name
-       (dynamo/describe-table aws-creds)
-       (:status)
-       (= :active)))
+  (dynamo/put-item aws-creds table-name {:id key
+                                         :version 2
+                                         :mime-type "application/x-nippy"
+                                         :data (dynamo/freeze value)}))
 
 ;; TODO: throughput should be modifiable
 (defn- ensure-table-exists [aws-creds table-name async]
-  (let [properties {:name table-name
-                    :hash-key {:name "id"
-                               :type :s}
-                    :throughput {:read 1
-                                 :write 1}}]
-      (dynamo/ensure-table aws-creds properties)
-      (if (not async)
-        (drop-while identity
-                    (repeatedly #(do
-                                   (Thread/sleep 1000)
-                                   (not (active-table? aws-creds table-name))))))))
+  (dynamo/ensure-table aws-creds table-name ["id" :s]
+                       {:throughput {:read 1 :write 1}
+                        :block? (not async)}))
 
 (defn cache [access-key secret-key table-name]
   (let [aws-creds {:access-key access-key
-                   :secret-key secret-key}]
+                   :secret-key secret-key}
+        table-name (keyword table-name)]
    (reify
      KeyValueStore
      (get-value [_ key]
