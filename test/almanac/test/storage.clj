@@ -105,10 +105,13 @@
 
 (deftest dynamodb-social-storage
   (testing "DynamoDB social storage implementation"
-    (let [dev-system (system/dev-system)
-          dyn-storage (social-dynamo/dynamo-storage (:aws-access-key env)
+    (let [dyn-storage (social-dynamo/dynamo-storage (:aws-access-key env)
                                                     (:aws-secret-key env)
                                                     :table-name-prefix "test")
-          test-system (assoc dev-system :activity-storage dyn-storage)]
-      (start dyn-storage nil)
-      (basic-test-storage test-system))))
+          test-system (system/->AlmanacSystem (kvstore/mem-store)
+                                              (kvstore/mem-store)
+                                              dyn-storage
+                                              (kvstore/mem-store))]
+      (system/start test-system {})
+      (basic-test-storage test-system)
+      (system/stop test-system {:activity-storage {:delete-tables true}}))))

@@ -19,4 +19,5 @@
       (is (nil? (cache/get-value dc test-email)))
       (cache/set-value dc test-email test-info)
       (is (= (cache/get-value dc test-email)
-             test-info)))))
+             test-info))
+      (system/stop dc {:delete-tables true}))))

@@ -31,6 +31,8 @@
      (set-value [_ key value]
        (set-value aws-creds table-name key value))
      Service
-     (start [this options]
+     (start [_ options]
        (ensure-table-exists aws-creds table-name (:async options)))
-     (stop [_]))))
+     (stop [_ options]
+       (when (:delete-tables options)
+         (dynamo/delete-table aws-creds table-name))))))

@@ -11,7 +11,7 @@
                  [clj-http "0.7.2"]
                  [lobos "1.0.0-beta1"]
                  [korma "0.3.0-RC5"]
-                 [rotary "0.4.0"]
+                 ;;[rotary "0.4.0"]
                  [twitter-api "0.7.4"]
                  [com.taoensso/faraday "0.10.2"]
                  [clj-facebook-graph "0.4.1-SNAPSHOT"]

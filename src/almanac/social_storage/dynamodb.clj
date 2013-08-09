@@ -1,8 +1,9 @@
 (ns almanac.social-storage.dynamodb
   (:require [clojure.set :as cset]
             [clojure.walk :refer [keywordize-keys]]
-            [rotary.client :as rotary]
-            [almanac.storage :refer [SocialStorage]])
+            [taoensso.faraday :as dynamo]
+            [almanac.storage :refer [SocialStorage]]
+            [almanac.system :refer [Service]])
   (:import [java.text SimpleDateFormat]))
 
 (def ^:private dynamo-date-format (SimpleDateFormat. "YYYY.MM.dd HH:mm:ss Z"))
@@ -43,7 +44,7 @@
 
 (defn- sync-in-table [creds table-name user-key new-items sync-attr]
   (let [sync-attr-name (name sync-attr)
-        existing-item-ids (->> (rotary/query creds table-name {"user-id" user-key})
+        existing-item-ids (->> (dynamo/query creds table-name {"user-id" user-key})
                                (:items)
                                (map #(get % sync-attr-name)))
         new-item-ids (map #(get % sync-attr) new-items)
@@ -52,7 +53,7 @@
                     )]
     (doseq [item new-items
             :when (contains? new-ids (get item sync-attr))]
-      (rotary/put-item creds table-name (ActivityItem->dynamo (assoc item :user-id user-key))))))
+      (dynamo/put-item creds table-name (ActivityItem->dynamo (assoc item :user-id user-key))))))
 
 (defn- sync-posts [creds table-name posts]
   (let [by-user-network (group-by #(user-key (:sender-id %) (:network-type %))  posts)]
@@ -67,9 +68,27 @@
     (sync-posts creds (prefixed-table prefix "posts") posts)))
 
 (defn- get-posts [creds prefix user-id network]
-  (->> (rotary/query creds (prefixed-table prefix "posts") {"user-id" (user-key user-id network)})
+  (->> (dynamo/query creds (prefixed-table prefix "posts") {"user-id" (user-key user-id network)})
        (:items)
        (map dynamo->ActivityItem)))
+
+(def ^:private posts-table-def
+  {:name "posts"
+   :hash-key ["user-id" :s]
+   :range-key ["id" :s]})
+
+(def ^:private tables [posts-table-def])
+
+(defn- ensure-table-exists [creds prefix {:keys [name hash-key range-key]}]
+  (let [def-options {:block? true
+                     :throughput {:read 1 :write 1}}
+        options (if range-key
+                  (assoc def-options :range-keydef range-key)
+                  def-options)]
+    (dynamo/ensure-table creds
+                         (prefixed-table prefix "posts")
+                         hash-key
+                         options)))
 
 (defn dynamo-storage [access-key secret-key & {:keys [table-name-prefix]}]
   (let [creds {:access-key access-key
@@ -88,4 +107,12 @@
         (get-posts creds table-name-prefix  user-id network))
       (get-conversation-items [_ current-user-id companion-user-id network]
         nil)
+      Service
+      (start [_ options]
+        (doseq [table-def tables]
+          (ensure-table-exists creds table-name-prefix table-def)))
+      (stop [_ options]
+        (when (:delete-tables options)
+          (doseq [{:keys [name]} tables]
+            (dynamo/delete-table creds (prefixed-table table-name-prefix name)))))
       )))
