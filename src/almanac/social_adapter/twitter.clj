@@ -44,13 +44,13 @@
   (oauth/make-oauth-creds app-consumer-key app-consumer-secret user-token token-secret))
 
 (defn- get-mentions [creds]
-  (:body (api/statuses-mentions-timeline :params {:count 200} :oauth-creds (oauth-creds-from creds))))
+  (:body (api/statuses-mentions-timeline :params {:count 100} :oauth-creds (oauth-creds-from creds))))
 
 (defn- get-messages [creds]
-  (:body (api/direct-messages :params {:count 200} :oauth-creds (oauth-creds-from creds))))
+  (:body (api/direct-messages :params {:count 100} :oauth-creds (oauth-creds-from creds))))
 
 (defn- get-public-tweets [creds user-id]
-  (:body (api/statuses-user-timeline :oauth-creds creds :params {:screen_name user-id :count 50})))
+  (:body (api/statuses-user-timeline :oauth-creds creds :params {:user_id user-id :count 50})))
 
 
 (defmethod update-activity :twitter [network user-id system]
