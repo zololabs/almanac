@@ -7,6 +7,7 @@
             [almanac.cache :as cache]
             [almanac.utils :as utils]
             [almanac.system :refer [dev-system prod-system]]
+            [almanac.storage :as ss]
             [clojure.string :as str]
             [slingshot.slingshot :refer [try+ throw+]]
             [ring.util.response :as ring-response]
@@ -86,7 +87,7 @@
         profiles (:socialProfiles person)
         storage (:activity-storage system)]
     (->> (keys profiles)
-         (mapcat #(get-user-posts storage (:username (get profiles %)) %))
+         (mapcat #(ss/get-user-posts storage (:username (get profiles %)) %))
          (sort-by :created-time))))
 
 (defn process-public-activity-request [system]
@@ -99,7 +100,7 @@
          (catch Object _
            (let [reason (:cause &throw-context)]
              (log/error (format "Failed to get public activity for %s: %s" email reason))
-             (response 500 {:error "Internal server error: %s" reason}))))))))
+             (response 500 {:error (format "Internal server error: %s" reason)}))))))))
 
 (defn app-routes [system]
   (routes
