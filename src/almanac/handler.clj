@@ -81,10 +81,31 @@
                                        emails)]
            (response 200 data))))
 
+(defn- public-activity-by-email [system email]
+  (let [person (core/get-social-info email (:fullcontact-cache system))
+        profiles (:socialProfiles person)
+        storage (:activity-storage system)]
+    (->> (keys profiles)
+         (mapcat #(get-user-posts storage (:username (get profiles %)) %))
+         (sort-by :created-time))))
+
+(defn process-public-activity-request [system]
+  (fn [request]
+    (let [email (get-in request [:params :email])]
+      (if-not (utils/valid-email? email)
+        (response 400 {:error "Invalid email address"})
+        (try+
+         (response 200 (public-activity-by-email system email))
+         (catch Object _
+           (let [reason (:cause &throw-context)]
+             (log/error (format "Failed to get public activity for %s: %s" email reason))
+             (response 500 {:error "Internal server error: %s" reason}))))))))
+
 (defn app-routes [system]
   (routes
    (GET "/api/person" [] (process-email-request system))
    (GET "/api/person/batch" [] (process-batch-request system))
+   (GET "/api/person/public-activity" [] (process-public-activity-request system))
    (route/resources "/")
    (route/not-found "Not Found")))
 
